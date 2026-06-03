@@ -52,6 +52,29 @@ Common credential categories:
 - Alpaca Live credentials only if you understand and accept Live trading risk.
 - Optional Telegram bot token if you enable Telegram transport. Telegram requires intentional bot setup and in-app route binding before it should be relied on for continuity.
 
+### Telegram Setup And Safety
+
+Telegram is an optional companion transport for PM continuity. It is intended to provide communication and notification capabilities and should not be treated as a trading authority.
+
+When configuring Telegram:
+
+1. Create your own Telegram bot using BotFather.
+2. Store the bot token securely and never commit it to source control.
+3. Do not share bot tokens, chat IDs, route IDs, screenshots, logs, or configuration values publicly.
+4. Configure Telegram through the app and complete any required route binding or authorization steps before relying on it.
+
+Important safety boundaries:
+
+- Telegram is transport-only and does not grant trading authority.
+- Telegram cannot final-approve Live trades.
+- Telegram cannot arm Live trading.
+- Telegram cannot bypass proposal review workflows.
+- Telegram cannot bypass LocalAuthentication requirements.
+- Telegram cannot bypass Engine safety gates.
+- Telegram cannot bypass the macOS application’s Live execution protections.
+
+Always treat Telegram as a communication layer rather than an execution layer.
+
 ZeroandZero does not use ChatGPT or Claude consumer subscription login, browser cookies, or web sessions as PM/Analyst runtime credentials. Provider API usage may incur separate provider charges under your own accounts. Use provider-side controls such as budgets, spend limits, project keys, service accounts, workspaces, or separate billing profiles where available.
 
 ## 5. Paper-First Workflow
