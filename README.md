@@ -21,31 +21,39 @@ This repo intentionally does **not** ship:
 
 ## Product Surface
 
-ZeroandZero is a local macOS workstation, not a hosted bot. The app gives the owner governed surfaces for PM communication, analyst work, portfolio monitoring, approvals, runtime configuration, and safety controls.
+ZeroandZero is a local macOS workstation, not a hosted bot. The app gives the owner governed surfaces for PM communication, analyst work, portfolio context, configuration, and safety controls.
 
-![ZeroandZero Command Center showing PM conversation, analyst activity, owner decisions, research signals, and system health cards.](docs/assets/readme/01-command-center-overview.png)
+### Command Center
 
-Command Center: owner-facing PM conversation, analyst activity, decision review, signals, and system health in one local control plane.
+![Command Center overview showing owner decisions and PM conversation surfaces.](docs/assets/readme/command-center-overview.png)
 
-![Short GIF showing a PM conversation and review surfaces for PM-led analyst work.](docs/assets/readme/02-pm-analyst-workflow.gif)
+Command Center: owner-facing PM conversation and governed work routing remain inside the local app.
 
-PM-led analyst workflow: an owner request can route to analyst work, durable review surfaces, and PM follow-through without granting trading authority.
+![PM analyst workflow response showing a reviewable healthcare analyst summary.](docs/assets/readme/command-center-pm-analyst-workflow.png)
 
-![Agent Skills Library and Analyst Charter context showing reusable methodology skills attached to analyst workflows.](docs/assets/readme/03-agent-skills-and-charters.png)
+PM/Analyst workflow: analyst work returns through the PM instead of bypassing app-owned review.
 
-Analyst Bench and Agent Skills Library: standing analyst roles, charters, and reusable research methods stay app-owned and reviewable.
+### Settings
 
-![Portfolio Watch showing selected market symbols and portfolio readiness in the macOS app.](docs/assets/readme/04-portfolio-watch.png)
+![Settings screen showing environment, Live execution protection, and market data configuration.](docs/assets/readme/settings-configuration.png)
 
-Portfolio Watch: app-owned portfolio context and market-data readiness for the PM and analysts, with data-quality caveats visible.
+Settings: user-managed credentials and runtime configuration stay local; Live arming and kill-switch controls live in System Control.
 
-![Governed Live order review flow showing an in-app owner decision before any live order can be routed.](docs/assets/readme/05-governed-live-review.gif)
+### Portfolio Watch
 
-Your Decisions: consequential requests remain owner-reviewed before any governed order path can proceed.
+![Synthetic Portfolio Watch demo with representative holdings and intraday context.](docs/assets/readme/portfolio-watch-synthetic.png)
 
-![System Control screen showing app readiness, market-data state, and safety posture.](docs/assets/readme/06-system-control.png)
+Portfolio Watch: representative synthetic portfolio context showing watchlist, allocation, and intraday surfaces without real account data.
 
-System Control: Live posture, kill switch, runtime status, local diagnostics, and safety state.
+### News And System Control
+
+![News surface showing public market and company headlines.](docs/assets/readme/news-overview.png)
+
+News: app-owned market and company context can feed reviewable PM and analyst workflows.
+
+![System Control screen showing safety posture, system issues, and runtime health.](docs/assets/readme/system-control-safety-health.png)
+
+System Control: Live posture, kill switch, local diagnostics, system issues, and runtime health stay visible in one place.
 
 ## Architecture At A Glance
 
