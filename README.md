@@ -27,33 +27,51 @@ ZeroandZero is a local macOS workstation, not a hosted bot. The app gives the ow
 
 ![PM analyst workflow response showing a reviewable healthcare analyst summary.](docs/assets/readme/command-center-pm-analyst-workflow.png)
 
-Command Center: owner-facing PM conversation, top-level safety state, and PM/Analyst workflow remain inside the local app.
+_Command Center: owner-facing PM conversation, top-level safety state, and PM/Analyst workflow remain inside the local app._
+
+![Analyst Charters surface showing the standing analyst bench and app-owned analyst context.](docs/assets/readme/command-center-analyst-charters.png)
+
+_Analyst Charters: standing analyst roles and reusable operating context stay visible as app-owned configuration._
+
+![Standing analyst scheduling surface showing durable recurring report cadence.](docs/assets/readme/command-center-scheduling.png)
+
+_Standing schedules: recurring analyst work is explicit, durable, and separate from ad hoc PM tasking._
 
 ### Portfolio Watch And Market Watch
 
 ![Portfolio Watch intraday wall showing selected symbols and live chart cards.](docs/assets/readme/portfolio-watch-intraday-wall.png)
 
-Portfolio Watch: a market-hours wall for the names the owner cares about most.
+_Portfolio Watch: a market-hours wall for the names the owner cares about most._
 
 ![Portfolio intelligence view with synthetic demo portfolio data.](docs/assets/readme/portfolio-watch-portfolio-intelligence.png)
 
-Portfolio Intelligence: synthetic demo data shows exposure, readiness, and risk context without publishing real account values.
+_Portfolio Intelligence: synthetic demo data shows exposure, readiness, and risk context without publishing real account values._
 
 ### Settings Walkthrough
 
 ![Settings top showing environment and Live execution protection.](docs/assets/readme/settings-walkthrough-01-top.png)
 
+_Settings top: environment, Paper/Live posture, and Live execution protection._
+
 ![Settings middle showing market data, UI, and news source controls.](docs/assets/readme/settings-walkthrough-02-middle.png)
 
-![Settings lower provider section with public-safe credential placeholders.](docs/assets/readme/settings-walkthrough-03-providers.png)
+_Settings middle: market data, UI, and news controls._
 
-Settings: user-managed credentials and runtime configuration stay local; secret values are not shown or stored in repo files.
+![Settings lower provider section with public-safe credential placeholders.](docs/assets/readme/settings-walkthrough-03-bottom.png)
+
+_Settings bottom: provider configuration uses user-managed Keychain lookup labels; secret values are not shown or stored in repo files._
+
+### News
+
+![News surface showing public market and company headlines.](docs/assets/readme/news-overview.png)
+
+_News: app-owned market and company context can feed reviewable PM and analyst workflows._
 
 ### System Control
 
 ![System Control screen showing safety posture, system issues, and runtime health.](docs/assets/readme/system-control-safety-health.png)
 
-System Control: Live posture, kill switch, local diagnostics, system issues, and runtime health stay visible in one place.
+_System Control: Live posture, kill switch, local diagnostics, system issues, and runtime health stay visible in one place._
 
 ## Architecture At A Glance
 
