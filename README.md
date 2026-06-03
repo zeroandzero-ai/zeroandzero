@@ -17,7 +17,35 @@ This repo intentionally does **not** ship:
 - real API keys, tokens, or account identifiers
 - local runtime state or Keychain values
 - pre-loaded strategy documents, analyst charters
-- analyst reports, schedules, runtime settings, private/user-specific feed state, or screenshots
+- analyst reports, schedules, runtime settings, private/user-specific feed state, or screenshots containing private data
+
+## Product Surface
+
+ZeroandZero is a local macOS workstation, not a hosted bot. The app gives the owner governed surfaces for PM communication, analyst work, portfolio monitoring, approvals, runtime configuration, and safety controls.
+
+![ZeroandZero Command Center showing PM conversation, analyst activity, owner decisions, research signals, and system health cards.](docs/assets/readme/01-command-center-overview.png)
+
+Command Center: owner-facing PM conversation, analyst activity, decision review, signals, and system health in one local control plane.
+
+![Short GIF showing a PM conversation and review surfaces for PM-led analyst work.](docs/assets/readme/02-pm-analyst-workflow.gif)
+
+PM-led analyst workflow: an owner request can route to analyst work, durable review surfaces, and PM follow-through without granting trading authority.
+
+![Agent Skills Library and Analyst Charter context showing reusable methodology skills attached to analyst workflows.](docs/assets/readme/03-agent-skills-and-charters.png)
+
+Analyst Bench and Agent Skills Library: standing analyst roles, charters, and reusable research methods stay app-owned and reviewable.
+
+![Portfolio Watch showing selected market symbols and portfolio readiness in the macOS app.](docs/assets/readme/04-portfolio-watch.png)
+
+Portfolio Watch: app-owned portfolio context and market-data readiness for the PM and analysts, with data-quality caveats visible.
+
+![Governed Live order review flow showing an in-app owner decision before any live order can be routed.](docs/assets/readme/05-governed-live-review.gif)
+
+Your Decisions: consequential requests remain owner-reviewed before any governed order path can proceed.
+
+![System Control screen showing app readiness, market-data state, and safety posture.](docs/assets/readme/06-system-control.png)
+
+System Control: Live posture, kill switch, runtime status, local diagnostics, and safety state.
 
 ## Architecture At A Glance
 
