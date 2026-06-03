@@ -9131,17 +9131,17 @@ public actor Engine {
         }
 
         for decision in contextPack.recentDecisions {
-            let textValues = [
+            var textValues: [String] = [
                 decision.title,
                 decision.summary,
                 decision.recommendedAction ?? ""
             ]
-                + (decision.standingReviewAttentionItems ?? [])
-                + (decision.standingReviewCandidateLongs ?? [])
-                + (decision.standingReviewCandidateShorts ?? [])
-                + (decision.standingReviewCandidateThemes ?? [])
-                + (decision.standingReviewFollowUpItems ?? [])
-                + (decision.standingReviewAnalystTitles ?? [])
+            textValues.append(contentsOf: decision.standingReviewAttentionItems ?? [])
+            textValues.append(contentsOf: decision.standingReviewCandidateLongs ?? [])
+            textValues.append(contentsOf: decision.standingReviewCandidateShorts ?? [])
+            textValues.append(contentsOf: decision.standingReviewCandidateThemes ?? [])
+            textValues.append(contentsOf: decision.standingReviewFollowUpItems ?? [])
+            textValues.append(contentsOf: decision.standingReviewAnalystTitles ?? [])
             var score = pmConversationRecoveryScore(
                 textValues: textValues,
                 askSignals: querySignals
@@ -13418,10 +13418,11 @@ public actor Engine {
                 return seenDecisionIDs.insert(decision.decisionId).inserted
             }
 
-        return candidateDecisions.compactMap { decision -> (score: Int, sortDate: Date, summary: String)? in
+        var recoveredEntries: [(score: Int, sortDate: Date, summary: String)] = []
+        for decision in candidateDecisions {
             guard let standingReportIds = decision.standingReportIds,
                   standingReportIds.isEmpty == false else {
-                return nil
+                continue
             }
 
             let linkedReports = standingReportIds.compactMap { reportsByID[$0] }
@@ -13450,19 +13451,26 @@ public actor Engine {
                 decision.standingReviewAnalystTitles
                     ?? linkedReports.map { $0.title.replacingOccurrences(of: " Standing Report", with: "") }
             )
+            var textValues: [String] = [
+                decision.title,
+                decision.summary,
+                decision.recommendedAction ?? "",
+                linkedReport?.title ?? "",
+                linkedReport?.headlineView ?? "",
+                linkedReport?.summary ?? ""
+            ]
+            textValues.append(contentsOf: attentionItems)
+            textValues.append(contentsOf: candidateLongs)
+            textValues.append(contentsOf: candidateShorts)
+            textValues.append(contentsOf: candidateThemes)
+            textValues.append(contentsOf: followUpItems)
+            textValues.append(contentsOf: analystTitles)
             let score = pmConversationRecoveryScore(
-                textValues: [
-                    decision.title,
-                    decision.summary,
-                    decision.recommendedAction ?? "",
-                    linkedReport?.title ?? "",
-                    linkedReport?.headlineView ?? "",
-                    linkedReport?.summary ?? ""
-                ] + attentionItems + candidateLongs + candidateShorts + candidateThemes + followUpItems + analystTitles,
+                textValues: textValues,
                 askSignals: askSignals
             )
             guard score > 0 || asksForStandingReviewRecovery else {
-                return nil
+                continue
             }
 
             let dispositionLabel =
@@ -13501,12 +13509,13 @@ public actor Engine {
                 )
             }
 
-            return (
+            recoveredEntries.append((
                 score: max(score, asksForStandingReviewRecovery ? 7 : score),
                 sortDate: decision.updatedAt,
                 summary: "Standing-review memory: \(decision.title) — \(segments.joined(separator: " • "))"
-            )
+            ))
         }
+        return recoveredEntries
     }
 
     private func pmConversationRecoverySignals(from ask: String) -> Set<String> {
@@ -22768,29 +22777,29 @@ public actor Engine {
             action: "standing_analyst_report"
         )
 
-        return JobExecutionReport(
-            result: .object([
-                "jobType": .string(JobType.standingAnalystReport.rawValue),
-                "scheduleId": .string(schedule.scheduleId),
-                "charterId": .string(charter.charterId),
-                "analystId": .string(charter.analystId),
-                "memoId": .string(memo.memoId),
-                "reportId": .string(report.reportId),
-                "actualRuntimeIdentifier": .string(launchResult.runtimeProvenance?.actualRuntimeIdentifier ?? ""),
-                "actualReasoningMode": .string(launchResult.runtimeProvenance?.actualReasoningMode?.rawValue ?? ""),
-                "intendedProviderKind": .string(launchResult.runtimeProvenance?.intendedPolicy?.providerKind.rawValue ?? ""),
-                "intendedRuntimeIdentifier": .string(launchResult.runtimeProvenance?.intendedPolicy?.runtimeIdentifier ?? ""),
-                "synthesisStatus": .string(launchResult.synthesisStatus ?? ""),
-                "synthesisIssueSummary": .string(
-                    launchResult.synthesisIssueSummary.map(boundedArtifactFailureDetail) ?? ""
-                ),
-                "externalEvidenceStatus": .string(launchResult.externalEvidenceStatus ?? ""),
-                "externalEvidenceIssueSummary": .string(
-                    launchResult.externalEvidenceIssueSummary.map(boundedArtifactFailureDetail) ?? ""
-                ),
-                "summary": .string(summary)
-            ])
-        )
+        let resultPayload: [String: JSONValue] = [
+            "jobType": .string(JobType.standingAnalystReport.rawValue),
+            "scheduleId": .string(schedule.scheduleId),
+            "charterId": .string(charter.charterId),
+            "analystId": .string(charter.analystId),
+            "memoId": .string(memo.memoId),
+            "reportId": .string(report.reportId),
+            "actualRuntimeIdentifier": .string(launchResult.runtimeProvenance?.actualRuntimeIdentifier ?? ""),
+            "actualReasoningMode": .string(launchResult.runtimeProvenance?.actualReasoningMode?.rawValue ?? ""),
+            "intendedProviderKind": .string(launchResult.runtimeProvenance?.intendedPolicy?.providerKind.rawValue ?? ""),
+            "intendedRuntimeIdentifier": .string(launchResult.runtimeProvenance?.intendedPolicy?.runtimeIdentifier ?? ""),
+            "synthesisStatus": .string(launchResult.synthesisStatus ?? ""),
+            "synthesisIssueSummary": .string(
+                launchResult.synthesisIssueSummary.map(boundedArtifactFailureDetail) ?? ""
+            ),
+            "externalEvidenceStatus": .string(launchResult.externalEvidenceStatus ?? ""),
+            "externalEvidenceIssueSummary": .string(
+                launchResult.externalEvidenceIssueSummary.map(boundedArtifactFailureDetail) ?? ""
+            ),
+            "summary": .string(summary)
+        ]
+
+        return JobExecutionReport(result: .object(resultPayload))
     }
 
     private func standingReportRequiredMemoArtifactFailureReason(
