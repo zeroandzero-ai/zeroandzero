@@ -25,31 +25,31 @@ ZeroandZero is a local macOS workstation, not a hosted bot. The app gives the ow
 
 ### Command Center
 
-![Command Center overview showing owner decisions and PM conversation surfaces.](docs/assets/readme/command-center-overview.png)
-
-Command Center: owner-facing PM conversation and governed work routing remain inside the local app.
-
 ![PM analyst workflow response showing a reviewable healthcare analyst summary.](docs/assets/readme/command-center-pm-analyst-workflow.png)
 
-PM/Analyst workflow: analyst work returns through the PM instead of bypassing app-owned review.
+Command Center: owner-facing PM conversation, top-level safety state, and PM/Analyst workflow remain inside the local app.
 
-### Settings
+### Portfolio Watch And Market Watch
 
-![Settings screen showing environment, Live execution protection, and market data configuration.](docs/assets/readme/settings-configuration.png)
+![Portfolio Watch intraday wall showing selected symbols and live chart cards.](docs/assets/readme/portfolio-watch-intraday-wall.png)
 
-Settings: user-managed credentials and runtime configuration stay local; Live arming and kill-switch controls live in System Control.
+Portfolio Watch: a market-hours wall for the names the owner cares about most.
 
-### Portfolio Watch
+![Portfolio intelligence view with synthetic demo portfolio data.](docs/assets/readme/portfolio-watch-portfolio-intelligence.png)
 
-![Synthetic Portfolio Watch demo with representative holdings and intraday context.](docs/assets/readme/portfolio-watch-synthetic.png)
+Portfolio Intelligence: synthetic demo data shows exposure, readiness, and risk context without publishing real account values.
 
-Portfolio Watch: representative synthetic portfolio context showing watchlist, allocation, and intraday surfaces without real account data.
+### Settings Walkthrough
 
-### News And System Control
+![Settings top showing environment and Live execution protection.](docs/assets/readme/settings-walkthrough-01-top.png)
 
-![News surface showing public market and company headlines.](docs/assets/readme/news-overview.png)
+![Settings middle showing market data, UI, and news source controls.](docs/assets/readme/settings-walkthrough-02-middle.png)
 
-News: app-owned market and company context can feed reviewable PM and analyst workflows.
+![Settings lower provider section with public-safe credential placeholders.](docs/assets/readme/settings-walkthrough-03-providers.png)
+
+Settings: user-managed credentials and runtime configuration stay local; secret values are not shown or stored in repo files.
+
+### System Control
 
 ![System Control screen showing safety posture, system issues, and runtime health.](docs/assets/readme/system-control-safety-health.png)
 
