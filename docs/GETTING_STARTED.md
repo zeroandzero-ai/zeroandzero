@@ -11,11 +11,18 @@ ZeroandZero is a macOS app for governed, local-first investing workflows. It is 
 - Optional Touch ID or Mac password support for Live order user-presence protection.
 - Apple Silicon and Intel Macs should both be treated as supported macOS development targets when the installed Xcode toolchain can build the workspace.
 
-## 2. Clone, Build, And Test
+## 2. Clone The Repo
 
 ```bash
 git clone https://github.com/zeroandzero-ai/zeroandzero.git
 cd zeroandzero
+```
+
+## 3. Build And Test
+
+Build the macOS app:
+
+```bash
 xcodebuild -workspace AlgoTradingMac.xcworkspace -scheme AlgoTradingMac -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO build
 ```
 
@@ -32,15 +39,31 @@ cd Packages/TradingKit
 swift test
 ```
 
-## 3. First Launch Expectations
+Return to the repo root before opening the workspace:
 
-On first launch, expect a local workstation with no bundled credentials, no bundled brokerage account, no bundled model access, no bundled private strategy, and no hidden subscription-backed inference path.
+```bash
+cd ../..
+```
+
+## 4. Launch The App
+
+Open the workspace in Xcode:
+
+```bash
+open AlgoTradingMac.xcworkspace
+```
+
+Select the `AlgoTradingMac` scheme, choose a macOS destination, and run the app. On first launch, expect the app to start as a local workstation with no bundled accounts or provider access.
+
+## 5. First Launch Expectations
+
+ZeroandZero does not ship bundled credentials, brokerage accounts, model access, private strategy, or hidden subscription-backed inference.
 
 You configure local runtime records, provider profiles, account credentials, Telegram settings if used, Strategy Briefs, Analyst Charters, and Skills Library content for your own use.
 
 The repo may include public default or example RSS/feed sources when they are public-safe and intentionally tracked. You only need to set up additional RSS/feed sources if you want more or different sources. Private, paid, tokenized, subscriber, user-specific, and fetched article/feed history stays local and is not included.
 
-## 4. Credentials
+## 6. Configure Credentials
 
 Store secrets in macOS Keychain and configure the app with lookup labels or app-owned provider profiles. Do not put credentials in source files, issue text, screenshots, logs, or docs.
 
@@ -51,6 +74,14 @@ Common credential categories:
 - Alpaca Paper credentials for Paper workflow validation.
 - Alpaca Live credentials only if you understand and accept Live trading risk.
 - Optional Telegram bot token if you enable Telegram transport. Telegram requires intentional bot setup and in-app route binding before it should be relied on for continuity.
+
+Recommended first-run order:
+
+1. Configure OpenAI and/or Anthropic API provider profiles for PM and Analyst runtimes you intend to use.
+2. Configure Alpaca Paper credentials before any trading workflow.
+3. Confirm Paper is the active environment.
+4. Add optional Telegram transport only after the local app path is understandable.
+5. Leave Alpaca Live credentials, Live arming, and local user-presence settings for a later deliberate review.
 
 ### Telegram Setup And Safety
 
@@ -77,7 +108,7 @@ Always treat Telegram as a communication layer rather than an execution layer.
 
 ZeroandZero does not use ChatGPT or Claude consumer subscription login, browser cookies, or web sessions as PM/Analyst runtime credentials. Provider API usage may incur separate provider charges under your own accounts. Use provider-side controls such as budgets, spend limits, project keys, service accounts, workspaces, or separate billing profiles where available.
 
-## 5. Paper-First Workflow
+## 7. Paper-First Workflow
 
 Start with Paper.
 
@@ -89,7 +120,7 @@ Start with Paper.
 
 ZeroandZero's Alpaca integration does not provide funding, withdrawal, transfer, or account-management flows. Use the broker's official surfaces for those account operations.
 
-## 6. Live Safety Workflow
+## 8. Live Safety Workflow
 
 Live mode has explicit safety boundaries:
 
@@ -102,7 +133,7 @@ Live mode has explicit safety boundaries:
 
 Use Live only when you have reviewed the active environment, open orders, account state, kill switch, arming state, and local user-presence settings.
 
-## 7. Create Your Own Operating Materials
+## 9. Create Your Own Operating Materials
 
 The public repo does not include private strategy content. Create your own materials locally.
 
@@ -122,7 +153,26 @@ Use Skills to capture methodology guidance, review checklists, and repeatable an
 
 Configure only public, non-tokenized, non-account-specific feeds in repo-tracked examples. Add or replace RSS/feed sources only when you want more or different sources than any shipped public defaults. Keep private, paid, tokenized, subscriber, user-specific feed state, and fetched feed/article history local.
 
-## 8. Useful Local Commands
+## 10. First-Run Checklist
+
+Use this order for a clean first pass:
+
+1. Clone the repo.
+2. Build the macOS app.
+3. Run the app tests and `TradingKit` tests.
+4. Launch the app from Xcode.
+5. Configure user-managed OpenAI and/or Anthropic API credentials.
+6. Configure Alpaca Paper credentials.
+7. Confirm Paper is active.
+8. Configure optional Telegram transport only if you want remote PM continuity.
+9. Review or create your own Portfolio Strategy Brief.
+10. Review or customize Analyst Charters.
+11. Review the Agent Skills Library and add your own methodology notes if needed.
+12. Add additional RSS/feed sources only if desired.
+13. Use Paper workflows before any Live exploration.
+14. Read the Live safety workflow before configuring or arming Live.
+
+## 11. Useful Local Commands
 
 With the app not running, this should fail cleanly with a missing-runtime response:
 
@@ -133,7 +183,7 @@ swift run alpaca_agentctl status
 
 With the app running, it should return local status JSON from the loopback IPC server.
 
-## 9. Known Limitations
+## 12. Known Limitations
 
 - Local macOS app, not a hosted trading service.
 - No bundled brokerage account or credentials.
