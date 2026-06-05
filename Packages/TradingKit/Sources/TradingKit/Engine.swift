@@ -4448,15 +4448,16 @@ public actor Engine {
         if runtimeProvenance.conversationTrace != nil {
             runtimeProvenance.conversationTrace?.actionPlanSource = resolvedActionPlanResult.source
         }
+        let priorLiveOrderReviewTruthLines = pmConversationLiveOrderReviewRouteTruthSummary(
+            approvalRequests: (try? await listPMApprovalRequests()) ?? [],
+            latestOwnerAsk: ownerMessage.body
+        )
         let commitmentConsistency = pmConversationWorkCommitmentConsistency(
             replyBody: synthesized.replyBody,
             actionPlan: appliedActionResult.actionPlan,
             appliedContext: appliedActionResult.context,
             latestOwnerAsk: ownerMessage.body,
-            hasPriorLiveOrderReviewRouteTruth: pmConversationHasPriorLiveOrderReviewRouteTruth(
-                approvalRequests: (try? await listPMApprovalRequests()) ?? [],
-                latestOwnerAsk: ownerMessage.body
-            )
+            priorLiveOrderReviewTruthLines: priorLiveOrderReviewTruthLines
         )
         if commitmentConsistency.visibleReplyModified,
            runtimeProvenance.conversationTrace != nil {
@@ -5876,9 +5877,24 @@ public actor Engine {
         actionPlan: PMConversationActionPlan?,
         appliedContext: PMConversationAppliedActionContext,
         latestOwnerAsk: String,
-        hasPriorLiveOrderReviewRouteTruth: Bool
+        priorLiveOrderReviewTruthLines: [String]
     ) -> PMConversationWorkCommitmentConsistencyResult {
         let trimmedReply = replyBody.trimmingCharacters(in: .whitespacesAndNewlines)
+        if priorLiveOrderReviewTruthLines.isEmpty == false,
+           pmConversationOwnerAskIsLiveOrderReadback(latestOwnerAsk),
+           pmConversationReplyDeniesLiveOrderReviewArtifact(trimmedReply) {
+            let truthSummary = priorLiveOrderReviewTruthLines
+                .prefix(4)
+                .joined(separator: " ")
+            let detail = "The visible PM reply denied a Live order-review artifact even though app-owned Live order-review route truth exists for this readback ask."
+            let replacement = "I need to correct that: app-owned Live order-review truth does exist. \(boundedConversationText(truthSummary, limit: 760))"
+            return PMConversationWorkCommitmentConsistencyResult(
+                replyBody: replacement,
+                actionPlan: pmConversationActionPlanMarkedWithWorkCommitmentGuard(actionPlan, detail: detail),
+                visibleReplyModified: true,
+                suppressAnalystDelegationBlockerFollowThrough: false
+            )
+        }
         let claimsAnalystWork = pmConversationReplyClaimsAppOwnedWorkCommitment(trimmedReply)
         let approvalClaim = pmConversationApprovalCommitmentClaim(in: trimmedReply)
         guard claimsAnalystWork || approvalClaim.isEmpty == false else {
@@ -5897,7 +5913,7 @@ public actor Engine {
                 appliedContext: appliedContext,
                 claim: approvalClaim,
                 latestOwnerAsk: latestOwnerAsk,
-                hasPriorLiveOrderReviewRouteTruth: hasPriorLiveOrderReviewRouteTruth
+                hasPriorLiveOrderReviewRouteTruth: priorLiveOrderReviewTruthLines.isEmpty == false
             )
             if approvalConsistency.visibleReplyModified {
                 return approvalConsistency
@@ -6083,6 +6099,54 @@ public actor Engine {
         ]
         return orderSignals.contains(where: { normalized.contains($0) })
             && readbackSignals.contains(where: { normalized.contains($0) })
+    }
+
+    private func pmConversationOwnerAskMentionsCashOrBuyingPower(_ ownerAsk: String) -> Bool {
+        let normalized = normalizedPMCommitmentText(ownerAsk)
+        guard normalized.isEmpty == false else { return false }
+        return [
+            "cash",
+            "buying power",
+            "buying-power",
+            "available funds",
+            "available balance",
+            "current balance",
+            "cash position"
+        ].contains(where: { normalized.contains($0) })
+    }
+
+    private func pmConversationReplyDeniesLiveOrderReviewArtifact(_ replyBody: String) -> Bool {
+        let normalized = normalizedPMCommitmentText(replyBody)
+        guard normalized.isEmpty == false else { return false }
+        let denialSignals = [
+            "i have not created",
+            "i haven't created",
+            "i did not create",
+            "i didn't create",
+            "no pm approval request",
+            "no approval item",
+            "no approval request",
+            "no governed order-review artifact",
+            "no order-review artifact",
+            "no order review artifact",
+            "no order attempt exists",
+            "no order attempt",
+            "does not exist",
+            "nothing can appear in command center"
+        ]
+        let artifactSignals = [
+            "approval",
+            "review",
+            "order-review",
+            "order review",
+            "your decisions",
+            "touch id",
+            "local authentication",
+            "localauthentication",
+            "route"
+        ]
+        return denialSignals.contains(where: { normalized.contains($0) })
+            && artifactSignals.contains(where: { normalized.contains($0) })
     }
 
     private func pmConversationHasPriorLiveOrderReviewRouteTruth(
@@ -11769,6 +11833,13 @@ public actor Engine {
         }
 
         lines.append(
+            contentsOf: pmConversationLiveAccountCashTruthSummaryLines(
+                contextPack.portfolioIntelligence.live,
+                latestOwnerAsk: latestOwnerAsk
+            )
+        )
+
+        lines.append(
             "Confirmed system readiness in app truth: \(contextPack.systemReadiness.status.displayName). \(boundedConversationText(contextPack.systemReadiness.summary, limit: 220))"
         )
         if contextPack.systemReadiness.blockers.isEmpty == false {
@@ -12010,16 +12081,16 @@ public actor Engine {
                 lines.append(
                     "Confirmed Live order review routing result in app truth: route_status=\(assessment.status.rawValue) action=\(assessment.action.rawValue) environment=\(assessment.environment.rawValue) live_armed=\(assessment.isLiveArmed) kill_switch=\(assessment.killSwitchEnabled ? "on" : "off") summary=\(boundedConversationText(assessment.summary, limit: 220))"
                 )
+                if assessment.blockedReasons.isEmpty == false {
+                    lines.append(
+                        "Confirmed Live order review blockers in app truth: \(assessment.blockedReasons.map(\.rawValue).joined(separator: ", "))."
+                    )
+                }
                 let detail = boundedConversationText(assessment.detail, limit: 360)
                 if detail.isEmpty == false,
                    detail.caseInsensitiveCompare(assessment.summary) != .orderedSame {
                     lines.append(
                         "Confirmed Live order review route detail in app truth: \(detail)"
-                    )
-                }
-                if assessment.blockedReasons.isEmpty == false {
-                    lines.append(
-                        "Confirmed Live order review blockers in app truth: \(assessment.blockedReasons.map(\.rawValue).joined(separator: ", "))."
                     )
                 }
             } else {
@@ -12045,6 +12116,46 @@ public actor Engine {
             }
             return lines
         }
+    }
+
+    private func pmConversationLiveAccountCashTruthSummaryLines(
+        _ liveSummary: PortfolioEnvironmentSummary,
+        latestOwnerAsk: String
+    ) -> [String] {
+        let cashQuestion = pmConversationOwnerAskMentionsCashOrBuyingPower(latestOwnerAsk)
+        guard liveSummary.availability == .active else {
+            return cashQuestion
+                ? ["Confirmed Live account cash truth in app-owned Store: unavailable. \(liveSummary.statusSummary) Do not infer Live cash from holdings or market values."]
+                : []
+        }
+
+        guard let account = liveSummary.account else {
+            return cashQuestion
+                ? ["Confirmed Live account cash truth in app-owned Store: missing account snapshot. Do not infer Live cash from holdings or market values; request or wait for bounded account refresh/reconciliation."]
+                : []
+        }
+
+        let cash = pmConversationCurrencyText(account.cash) ?? "unavailable"
+        let buyingPower = pmConversationCurrencyText(account.buyingPower) ?? "unavailable"
+        let equity = pmConversationCurrencyText(account.equity) ?? "unavailable"
+        return [
+            "Confirmed Live account cash truth in app-owned Store: cash \(cash); buying power \(buyingPower); equity \(equity); account status \(account.status). This broker/account snapshot is the cash source; do not infer cash from holdings, positions, or Portfolio Watch market values."
+        ]
+    }
+
+    private func pmConversationCurrencyText(_ value: Double?) -> String? {
+        guard let value, value.isFinite else { return nil }
+        let absoluteValue = abs(value)
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.usesGroupingSeparator = true
+        formatter.maximumFractionDigits = absoluteValue >= 1_000 ? 0 : 2
+        formatter.minimumFractionDigits = 0
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        guard let formatted = formatter.string(from: NSNumber(value: absoluteValue)) else {
+            return nil
+        }
+        return "\(value < 0 ? "-" : "")$\(formatted)"
     }
 
     private func pmConversationNaturalHistorySnippet(_ summary: String) -> String {

@@ -9881,7 +9881,7 @@ struct MarketWatchView: View {
                         x: .value("Time", point.timestamp),
                         y: .value("Price", point.price)
                     )
-                    .interpolationMethod(.catmullRom)
+                    .interpolationMethod(.linear)
                     .lineStyle(StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
                     .foregroundStyle(lineColor)
                 }

@@ -579,23 +579,24 @@ public struct PortfolioWatchIntradaySeriesTracker: Sendable, Equatable {
             series = StoredSeries(dayKey: dayKey, points: [])
         }
 
-        if let last = series.points.last, last.bucketStart == bucketStart {
-            series.points[series.points.count - 1] = StoredPoint(
-                bucketStart: bucketStart,
-                timestamp: eventDate,
-                price: resolvedValue.price
-            )
+        let storedPoint = StoredPoint(
+            bucketStart: bucketStart,
+            timestamp: eventDate,
+            price: resolvedValue.price
+        )
+        if let existingIndex = series.points.firstIndex(where: { $0.bucketStart == bucketStart }) {
+            series.points[existingIndex] = storedPoint
         } else {
-            series.points.append(
-                StoredPoint(
-                    bucketStart: bucketStart,
-                    timestamp: eventDate,
-                    price: resolvedValue.price
-                )
-            )
-            if series.points.count > maxPointsPerSeries {
-                series.points.removeFirst(series.points.count - maxPointsPerSeries)
+            series.points.append(storedPoint)
+        }
+        series.points.sort {
+            if $0.bucketStart == $1.bucketStart {
+                return $0.timestamp < $1.timestamp
             }
+            return $0.bucketStart < $1.bucketStart
+        }
+        if series.points.count > maxPointsPerSeries {
+            series.points.removeFirst(series.points.count - maxPointsPerSeries)
         }
 
         seriesBySymbol[normalizedSymbol] = series
@@ -606,9 +607,19 @@ public struct PortfolioWatchIntradaySeriesTracker: Sendable, Equatable {
         guard let series = seriesBySymbol[normalizedSymbol] else {
             return []
         }
-        return series.points.map { point in
-            PortfolioWatchIntradayPoint(timestamp: point.timestamp, price: point.price)
-        }
+        return series.points
+            .filter { point in
+                point.price.isFinite && point.price > 0
+            }
+            .sorted {
+                if $0.bucketStart == $1.bucketStart {
+                    return $0.timestamp < $1.timestamp
+                }
+                return $0.bucketStart < $1.bucketStart
+            }
+            .map { point in
+                PortfolioWatchIntradayPoint(timestamp: point.timestamp, price: point.price)
+            }
     }
 
     public mutating func removeAll(keepingCapacity: Bool = true) {
@@ -943,21 +954,41 @@ public func resolvePortfolioWatchLiveValue(
         return nil
     }
 
-    if let lastTradeAt = quote.lastTradeTimestamp.flatMap(DateCodec.parseISO8601),
-       let lastPrice = positivePortfolioWatchPrice(quote.lastPrice) {
+    if let lastPrice = positivePortfolioWatchPrice(quote.lastPrice) {
+        let lastTradeAt = quote.lastTradeTimestamp.flatMap(DateCodec.parseISO8601)
+        let lastBarAt = quote.lastBarTimestamp.flatMap(DateCodec.parseISO8601)
+        if let lastTradeAt, let lastBarAt {
+            if lastBarAt > lastTradeAt {
+                return PortfolioWatchResolvedLiveValue(
+                    price: lastPrice,
+                    source: .minuteBar,
+                    observedAt: lastBarAt
+                )
+            }
+            return PortfolioWatchResolvedLiveValue(
+                price: lastPrice,
+                source: .lastTrade,
+                observedAt: lastTradeAt
+            )
+        }
+        if let lastTradeAt {
+            return PortfolioWatchResolvedLiveValue(
+                price: lastPrice,
+                source: .lastTrade,
+                observedAt: lastTradeAt
+            )
+        }
+        if let lastBarAt {
+            return PortfolioWatchResolvedLiveValue(
+                price: lastPrice,
+                source: .minuteBar,
+                observedAt: lastBarAt
+            )
+        }
         return PortfolioWatchResolvedLiveValue(
             price: lastPrice,
             source: .lastTrade,
-            observedAt: lastTradeAt
-        )
-    }
-
-    if let lastBarAt = quote.lastBarTimestamp.flatMap(DateCodec.parseISO8601),
-       let lastPrice = positivePortfolioWatchPrice(quote.lastPrice) {
-        return PortfolioWatchResolvedLiveValue(
-            price: lastPrice,
-            source: .minuteBar,
-            observedAt: lastBarAt
+            observedAt: quote.timestamp.flatMap(DateCodec.parseISO8601)
         )
     }
 

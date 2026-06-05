@@ -11091,6 +11091,88 @@ func inAppCompleteLiveOrderInstructionCreatesReviewItemWithoutSubmittingOrder() 
     #expect(ownerDecisionItems.first?.boundaryNote.contains("LocalAuthentication") == true)
 }
 
+@Test("In-app PM cash question receives explicit Live account cash truth")
+func inAppPMCashQuestionReceivesExplicitLiveAccountCashTruth() async throws {
+    let root = makePMCommunicationTempDirectory(name: "pm-communication-live-cash-truth")
+    let now = Date(timeIntervalSince1970: 1_746_000_625)
+    let profileStore = PMProfileStore(profilesDirectory: root.appendingPathComponent("profiles", isDirectory: true))
+    let sessionStore = PMCommunicationSessionStore(sessionsDirectory: root.appendingPathComponent("sessions", isDirectory: true))
+    let messageStore = PMCommunicationMessageStore(messagesDirectory: root.appendingPathComponent("messages", isDirectory: true))
+    let synthesisProvider = StubPMOpenAISynthesisProvider(
+        conversationOutput: PMConversationOpenAISynthesisOutput(
+            replyBody: "The current Live cash in app-owned account truth is $758.03, with buying power of $80,996.",
+            actionPlan: nil,
+            resolution: PMConversationResolutionState(
+                intentClass: .general,
+                disposition: .conversationOnly
+            )
+        ),
+        standingReviewOutput: PMStandingReviewOpenAISynthesisOutput(
+            disposition: "worth_monitoring",
+            summary: "Unused standing review summary.",
+            recommendedAction: "Unused standing review action."
+        )
+    )
+
+    _ = try await profileStore.upsert(
+        PMProfile(
+            pmId: "pm-1",
+            displayName: "Primary PM",
+            roleSummary: "Answers from app-owned account and portfolio truth.",
+            createdAt: now,
+            updatedAt: now
+        )
+    )
+
+    let engine = Engine(
+        configuration: Configuration(environment: .live),
+        pmProfileStore: profileStore,
+        pmCommunicationSessionStore: sessionStore,
+        pmCommunicationMessageStore: messageStore,
+        openAIKeyStatusProvider: StubPMOpenAIKeyProvider(configured: true, value: "test-openai-key"),
+        pmOpenAISynthesisProvider: synthesisProvider,
+        nowDate: { now }
+    )
+    await engine.store.applyStartupSnapshot(
+        account: Account(
+            id: "acct-live-redacted",
+            status: "ACTIVE",
+            cash: "758.03",
+            buyingPower: "80995.83",
+            equity: "39739.88",
+            multiplier: "2"
+        ),
+        positions: [
+            Position(symbol: "AVGO", qty: "23", side: "long", marketValue: "8959.65")
+        ],
+        openOrders: []
+    )
+    await engine.store.setTradingSafetyState(
+        isLive: true,
+        isArmedForLiveTrading: false,
+        armingSessionID: nil,
+        killSwitchEnabled: true
+    )
+
+    let session = try await engine.ensureInAppPMUserCommunicationSession(pmId: "pm-1")
+    let ownerAsk = try await engine.createPMCommunicationMessage(
+        sessionId: session.sessionId,
+        senderRole: PMCommunicationSenderRole.owner,
+        senderId: "owner",
+        body: "What is the current cash position in the live portfolio?",
+        source: AuditEventSource.ui
+    )
+    _ = try await engine.generatePMConversationReply(to: ownerAsk.messageId, source: AuditEventSource.ui)
+
+    let request = try #require(await synthesisProvider.lastConversationRequest)
+    let confirmedTruth = request.confirmedAppTruthSummary.joined(separator: "\n")
+    #expect(confirmedTruth.contains("Confirmed Live account cash truth in app-owned Store"))
+    #expect(confirmedTruth.contains("cash $758.03"))
+    #expect(confirmedTruth.contains("buying power $80,996"))
+    #expect(confirmedTruth.contains("do not infer cash from holdings"))
+    #expect(confirmedTruth.contains("acct-live-redacted") == false)
+}
+
 @Test("In-app incomplete Live order instruction asks follow-up and creates no approval")
 func inAppIncompleteLiveOrderInstructionAsksFollowUpAndCreatesNoApproval() async throws {
     let root = makePMCommunicationTempDirectory(name: "pm-communication-live-order-incomplete")
@@ -11230,6 +11312,114 @@ func inAppPMReplyCannotPromiseApprovalOrTouchIDWithoutDurableArtifact() async th
     #expect(reply.body.contains("Touch ID route"))
     #expect(reply.runtimeProvenance?.conversationTrace?.visibleReplyModifiedAfterSynthesis == true)
     #expect(reply.conversationActionPlan?.actions.first?.detail?.contains("Work commitment consistency guard") == true)
+}
+
+@Test("In-app PM readback cannot deny existing Live order review route truth")
+func inAppPMReadbackCannotDenyExistingLiveOrderReviewRouteTruth() async throws {
+    let root = makePMCommunicationTempDirectory(name: "pm-communication-live-order-readback-denial")
+    let now = Date(timeIntervalSince1970: 1_746_000_645)
+    let profileStore = PMProfileStore(profilesDirectory: root.appendingPathComponent("profiles", isDirectory: true))
+    let approvalStore = PMApprovalRequestStore(approvalRequestsDirectory: root.appendingPathComponent("approval_requests", isDirectory: true))
+    let sessionStore = PMCommunicationSessionStore(sessionsDirectory: root.appendingPathComponent("sessions", isDirectory: true))
+    let messageStore = PMCommunicationMessageStore(messagesDirectory: root.appendingPathComponent("messages", isDirectory: true))
+    let synthesisProvider = StubPMOpenAISynthesisProvider(
+        conversationOutput: PMConversationOpenAISynthesisOutput(
+            replyBody: "I have not created an in-app approval item or Touch ID route for this. No PM approval request, governed order-review artifact, LocalAuthentication handoff, or order attempt exists yet.",
+            actionPlan: PMConversationActionPlan(
+                summary: "Answer with an incorrect denial of existing app-owned order-review truth.",
+                actions: [
+                    PMConversationActionIntent(
+                        actionType: .answerOnly,
+                        summary: "Incorrectly deny Live order review route truth.",
+                        sourceMessageIds: []
+                    )
+                ]
+            ),
+            resolution: PMConversationResolutionState(
+                intentClass: .general,
+                disposition: .conversationOnly
+            )
+        ),
+        standingReviewOutput: PMStandingReviewOpenAISynthesisOutput(
+            disposition: "worth_monitoring",
+            summary: "Unused standing review summary.",
+            recommendedAction: "Unused standing review action."
+        )
+    )
+
+    _ = try await profileStore.upsert(
+        PMProfile(
+            pmId: "pm-1",
+            displayName: "Primary PM",
+            roleSummary: "Repairs Live order review readbacks from app-owned truth.",
+            createdAt: now,
+            updatedAt: now
+        )
+    )
+
+    let engine = Engine(
+        configuration: Configuration(environment: .live),
+        pmProfileStore: profileStore,
+        pmApprovalRequestStore: approvalStore,
+        pmCommunicationSessionStore: sessionStore,
+        pmCommunicationMessageStore: messageStore,
+        openAIKeyStatusProvider: StubPMOpenAIKeyProvider(configured: true, value: "test-openai-key"),
+        pmOpenAISynthesisProvider: synthesisProvider,
+        nowDate: { now }
+    )
+    _ = try await engine.upsertPMApprovalRequest(
+        PMApprovalRequest(
+            approvalRequestId: "approval-live-avgo",
+            pmId: "pm-1",
+            subject: "Approve Live order review: Buy AVGO, $9,000 market DAY",
+            rationale: "Owner asked to review a Live notional AVGO order.",
+            requestType: .liveOrderReview,
+            status: .resolved,
+            liveOrderReview: PMLiveOrderReviewPayload(
+                symbol: "AVGO",
+                side: .buy,
+                orderType: .market,
+                timeInForce: .day,
+                notionalAmount: Decimal(9_000),
+                instructionSummary: "Buy $9,000 of AVGO to the nearest whole share."
+            ),
+            ownerResponse: .approved,
+            ownerRespondedAt: now,
+            lastExecutionRoutingAssessment: PMExecutionRoutingAssessment(
+                approvalRequestId: "approval-live-avgo",
+                decisionId: nil,
+                proposalId: nil,
+                proposalTitle: nil,
+                proposalStatus: nil,
+                environment: .live,
+                isLiveArmed: true,
+                killSwitchEnabled: false,
+                status: .blockedExecutionPrerequisites,
+                action: .submitLiveOrderReview,
+                summary: "The approved Live order review is waiting for a usable AVGO price before it can size whole shares.",
+                detail: "The owner supplied $9,000 notional and asked for nearest-share sizing, but Store had no usable AVGO live price yet. No order has been sent.",
+                blockedReasons: [.marketPriceUnavailable]
+            ),
+            createdAt: now,
+            updatedAt: now
+        )
+    )
+
+    let session = try await engine.ensureInAppPMUserCommunicationSession(pmId: "pm-1")
+    let ownerAsk = try await engine.createPMCommunicationMessage(
+        sessionId: session.sessionId,
+        senderRole: PMCommunicationSenderRole.owner,
+        senderId: "owner",
+        body: "Why was the AVGO Live order blocked again?",
+        source: AuditEventSource.ui
+    )
+    let reply = try await engine.generatePMConversationReply(to: ownerAsk.messageId, source: AuditEventSource.ui)
+
+    #expect(reply.body.contains("I need to correct that"))
+    #expect(reply.body.contains("app-owned Live order-review truth does exist"))
+    #expect(reply.body.contains("market_price_unavailable"))
+    #expect(reply.body.contains("No PM approval request") == false)
+    #expect(reply.runtimeProvenance?.conversationTrace?.visibleReplyModifiedAfterSynthesis == true)
 }
 
 @Test("In-app PM reply cannot claim Your Decisions when created approval is not owner-visible")

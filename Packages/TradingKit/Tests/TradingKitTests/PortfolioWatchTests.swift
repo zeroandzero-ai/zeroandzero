@@ -373,6 +373,73 @@ func portfolioWatchIntradayTrackerUpdatesSameMinuteBucket() {
     #expect(points.first?.price == 191.10)
 }
 
+@Test("Portfolio Watch intraday tracker keeps out-of-order updates monotonic")
+func portfolioWatchIntradayTrackerKeepsOutOfOrderUpdatesMonotonic() {
+    var tracker = PortfolioWatchIntradaySeriesTracker()
+
+    tracker.ingest(
+        symbol: "AVGO",
+        quote: MarketQuote(
+            symbol: "AVGO",
+            lastPrice: 389,
+            timestamp: "2026-06-05T17:03:00Z",
+            lastTradeTimestamp: "2026-06-05T17:03:00Z"
+        ),
+        now: Date(timeIntervalSince1970: 1_764_000_180)
+    )
+    tracker.ingest(
+        symbol: "AVGO",
+        quote: MarketQuote(
+            symbol: "AVGO",
+            lastPrice: 386,
+            timestamp: "2026-06-05T17:01:00Z",
+            lastTradeTimestamp: "2026-06-05T17:01:00Z"
+        ),
+        now: Date(timeIntervalSince1970: 1_764_000_060)
+    )
+    tracker.ingest(
+        symbol: "AVGO",
+        quote: MarketQuote(
+            symbol: "AVGO",
+            lastPrice: 390,
+            timestamp: "2026-06-05T17:02:00Z",
+            lastTradeTimestamp: "2026-06-05T17:02:00Z"
+        ),
+        now: Date(timeIntervalSince1970: 1_764_000_120)
+    )
+    tracker.ingest(
+        symbol: "AVGO",
+        quote: MarketQuote(
+            symbol: "AVGO",
+            lastPrice: 391,
+            timestamp: "2026-06-05T17:02:45Z",
+            lastTradeTimestamp: "2026-06-05T17:02:45Z"
+        ),
+        now: Date(timeIntervalSince1970: 1_764_000_165)
+    )
+
+    let points = tracker.points(for: "AVGO")
+    #expect(points.map(\.price) == [386, 391, 389])
+    #expect(points.map(\.timestamp) == points.map(\.timestamp).sorted())
+}
+
+@Test("Portfolio Watch live value resolver uses newest trade or bar timestamp")
+func portfolioWatchLiveValueResolverUsesNewestTradeOrBarTimestamp() throws {
+    let quote = MarketQuote(
+        symbol: "AVGO",
+        lastPrice: 389.55,
+        timestamp: "2026-06-05T17:03:00Z",
+        lastTradeTimestamp: "2026-06-05T16:48:00Z",
+        lastBarTimestamp: "2026-06-05T17:03:00Z"
+    )
+
+    let resolved = try #require(resolvePortfolioWatchLiveValue(from: quote))
+
+    #expect(resolved.price == 389.55)
+    #expect(resolved.source == .minuteBar)
+    #expect(resolved.observedAt == DateCodec.parseISO8601("2026-06-05T17:03:00Z"))
+}
+
 @Test("Portfolio Watch first usable quote seeds the first intraday point immediately")
 func portfolioWatchIntradayTrackerSeedsFirstPointFromQuote() {
     var tracker = PortfolioWatchIntradaySeriesTracker()
